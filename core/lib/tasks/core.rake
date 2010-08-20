@@ -98,7 +98,7 @@ namespace :db do
   namespace :admin do
     desc "Create admin username and password"
     task :create => :environment do
-      require File.join(File.dirname(__FILE__), '..', '..', 'db', 'sample', 'users.rb')
+      require File.join(File.dirname(__FILE__), '..', 'generators', 'templates', 'db', 'sample', 'users.rb')
     end
   end
 
