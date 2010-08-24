@@ -29,6 +29,7 @@ class Order < ActiveRecord::Base
   has_many :adjustments
 
   before_create :create_user
+  before_create :generate_order_number
 
   delegate :email, :to => :user
   #delegate :ip_address, :to => :checkout
@@ -126,7 +127,8 @@ class Order < ActiveRecord::Base
       :shipment_state => shipment_state,
       :item_total => item_total,
       :adjustment_total => adjustment_total,
-      :payment_total => payment_total
+      :payment_total => payment_total,
+      :total => total
     }
     self.class.update_all(changes, { :id => id })
   end
@@ -248,7 +250,7 @@ class Order < ActiveRecord::Base
       random = "R#{Array.new(9){rand(9)}.join}"
       record = Order.find(:first, :conditions => ["number = ?", random])
     end
-    random
+    self.number = random
   end
 
   # convenience method since many stores will not allow user to create multiple shipments
@@ -269,27 +271,27 @@ class Order < ActiveRecord::Base
   # def payment_total
   #   payments.reload.total
   # end
-  
-  
+
+
   def ship_total
     shipping_charges.reload.map(&:amount).sum
   end
-  
+
   def tax_total
     tax_charges.reload.map(&:amount).sum
   end
-  
+
   def credit_total
     credits.reload.map(&:amount).sum.abs
   end
-  
+
   def charge_total
     charges.reload.map(&:amount).sum
   end
 
 
 
-  
+
   # def create_tax_charge
   #   if tax_charges.empty?
   #     tax_charges.create({
@@ -363,7 +365,6 @@ class Order < ActiveRecord::Base
     self.out_of_stock_items = InventoryUnit.sell_units(self)
     shipments.create(:inventory_units => inventory_units.reload)
     payments.each(&:process!)
-    update_attribute(:number, generate_order_number)
     update_attribute(:completed_at, Time.now)
   end
 
